@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<!- Shaola Ren Oct.14.2013 -!>
+<html>
+
+  <head>
+    <script type="text/javascript">
+	  // Global variables
+	  var n = 9;
+	  var cell = Math.floor(570/(n+2));
+	  var canvas;
+	  var ctx;
+	  var canvas0;
+	  var ctx0;
+	  var rat1X = 0;
+	  var rat1Y = 0;
+	  var rat2X = 0;
+	  var rat2Y = 0;
+	  var oldRat1X = 0;
+	  var oldRat1Y = 0;
+	  var oldRat2X = 0;
+	  var oldRat2Y = 0;
+	  var oldBack = new Image();
+	  var rat1 = new Image();
+	  var rat2 = new Image();
+	  var hallImg = new Image();
+	  var wallImg = new Image();
+	  var sproutImg = new Image();
+	  var score1 = 0;
+	  var score2 = 0;
+	  var sproutsLeft = 0;
+	  var gBoard = new Array();
+	  
+      
+	  // This function is called on page load.
+      
+
+      function canvasRatRace() {
+
+        // Get the canvas element.
+        canvas = document.getElementById("myCanvas");
+        // Get the score canvas element.
+        canvas0 = document.getElementById("myScore");
+		
+		
+		// Make sure you got it.
+        if (canvas.getContext)
+
+        // If you have it, create a canvas user inteface element.
+        {
+          // Specify 2d canvas type.
+          ctx = canvas.getContext("2d");
+          
+		  ctx.clearRect(0, 0, 570, 570);
+          // Paint it white.
+          ctx.fillStyle = "#ffffff";
+          ctx.rect(0, 0, 570, 570);
+          ctx.fill();
+          // Paint wall, brussel, rats, hall.
+		  drawBoard(n);
+        }
+		
+		// Initialize the score element.
+        if (canvas0.getContext)
+
+        // If you have it, create score element.
+        {
+          // Specify score 2d canvas type.
+          ctx0 = canvas0.getContext("2d");
+		  ctx0.clearRect(0, 0, 570, 570);
+		  drawScoreBoard();
+		  
+        }
+		
+		// Play the game until the until the game is over.
+        gameLoop = setInterval(doGameLoop, 16);
+		
+		// Add keyboard listener.
+        window.addEventListener('keydown', whatKey, true);
+      }
+	  
+	  function drawScoreBoard(){
+	    ctx0.font = "20px Ariel";
+        ctx0.fillText("Red Score", 20, 15);
+        ctx0.fillText(score1, 150, 15);
+		ctx0.fillText("Blue Score", 20, 65);
+		ctx0.fillText(score2, 150, 65);
+		ctx0.fillText("Sprouts Left", 20, 115);
+		ctx0.fillText(sproutsLeft, 150, 115);
+		ctx0.font = "15px Ariel";
+		ctx0.fillText("'W A S D': control RED", 20, 215);
+		ctx0.fillText("'I J K L': control BLUE", 270, 215);
+		ctx0.fillText("W: up, S: down", 20, 255);
+		ctx0.fillText("I: up, K: down", 270, 255);
+		ctx0.fillText("A: left, D: right", 20, 295);
+		ctx0.fillText("J: left, L: right", 270, 295);
+		ctx0.fillText("Press 'ESC' key to exit game", 20, 335);
+		ctx0.fillText("RED and BLUE rats try to collect SPROUT as many as possible", 20, 375);
+		var vStep = Math.max(40,Math.floor(cell));
+		var hStep = Math.max(Math.floor(cell), 50);
+		ctx0.putImageData(rat1, 20, 375+vStep);
+		ctx0.fillText("RED rat", 30+cell, 375+vStep+15);
+		ctx0.putImageData(rat2, 20+hStep*3, 375+vStep);
+		ctx0.fillText("Blue rat", 30+hStep*3+cell, 375+vStep+15);
+		ctx0.putImageData(wallImg, 20, 375+vStep*2+5);
+		ctx0.fillText("Wall", 30+cell, 375+vStep*2+20);
+		ctx0.putImageData(hallImg, 20+hStep*3, 375+vStep*2+5);
+		ctx0.fillText("Hall", 30+hStep*3+cell, 375+vStep*2+20);
+		ctx0.putImageData(sproutImg, 20+hStep*5, 375+vStep*2+5);
+		ctx0.fillText("Sprout", 30+hStep*5+cell, 375+vStep*2+20);
+	}
+	  
+	  function doGameLoop() {
+
+        // Put old background down.
+		oldRat1PX = oldRat1X*cell;
+		oldRat1PY = oldRat1Y*cell;
+		oldRat2PX = oldRat2X*cell;
+		oldRat2PY = oldRat2Y*cell;
+        ctx.putImageData(oldBack, oldRat1PX, oldRat1PY);
+		ctx.putImageData(oldBack, oldRat2PX, oldRat2PY);
+
+        // Put rat in new position.
+		rat1PX = rat1X*cell;
+		rat1PY = rat1Y*cell;
+		rat2PX = rat2X*cell;
+		rat2PY = rat2Y*cell;
+        ctx.putImageData(rat1, rat1PX, rat1PY);
+		ctx.putImageData(rat2, rat2PX, rat2PY);
+		
+        // test finish
+		finishTest();
+		
+      }
+	  
+	  function whatKey(evt){
+	    
+		oldRat1X = rat1X;
+		oldRat1Y = rat1Y;
+		oldRat2X = rat2X;
+		oldRat2Y = rat2Y;
+		
+		switch(evt.keyCode){
+		
+		// 'w', up
+		case 87:
+		  if(gBoard[rat1Y-1][rat1X]=='@'){
+		    gBoard[rat1Y-1][rat1X] = '.';
+			rat1Y = rat1Y - 1;
+			score1++;
+			sproutsLeft--;
+		  }
+		  else if(gBoard[rat1Y-1][rat1X]=='.'){
+		    rat1Y = rat1Y - 1;
+		  }
+		  break;
+		// 's', down
+		case 83:
+		  if(gBoard[rat1Y+1][rat1X]=='@'){
+		    gBoard[rat1Y+1][rat1X] = '.';
+			rat1Y = rat1Y + 1;
+			score1++;
+			sproutsLeft--;
+		  }
+		  else if(gBoard[rat1Y+1][rat1X]=='.'){
+		    rat1Y = rat1Y + 1;
+		  }
+		  break;
+		// 'a', left
+		case 65:
+		  if(gBoard[rat1Y][rat1X-1]=='@'){
+		    gBoard[rat1Y][rat1X-1] = '.';
+			rat1X = rat1X - 1;
+			score1++;
+			sproutsLeft--;
+		  }
+		  else if(gBoard[rat1Y][rat1X-1]=='.'){
+		    rat1X = rat1X - 1;
+		  }
+		  break;
+		// 'd', right
+		case 68:
+		  if(gBoard[rat1Y][rat1X+1]=='@'){
+		    gBoard[rat1Y][rat1X+1] = '.';
+			rat1X = rat1X + 1;
+			score1++;
+			sproutsLeft--;
+		  }
+		  else if(gBoard[rat1Y][rat1X+1]=='.'){
+		    rat1X = rat1X + 1;
+		  }
+		  break;
+		
+        // up
+		case 73:
+		  if(gBoard[rat2Y-1][rat2X]=='@'){
+		    gBoard[rat2Y-1][rat2X] = '.';
+			rat2Y = rat2Y - 1;
+			score2++;
+			sproutsLeft--;
+		  }
+		  else if(gBoard[rat2Y-1][rat2X]=='.'){
+		    rat2Y = rat2Y - 1;
+		  }
+		  break;
+		// down
+		case 75:
+		  if(gBoard[rat2Y+1][rat2X]=='@'){
+		    gBoard[rat2Y+1][rat2X] = '.';
+			rat2Y = rat2Y + 1;
+			score2++;
+			sproutsLeft--;
+		  }
+		  else if(gBoard[rat2Y+1][rat2X]=='.'){
+		    rat2Y = rat2Y + 1;
+		  }
+		  break;
+		// left
+		case 74:
+		  if(gBoard[rat2Y][rat2X-1]=='@'){
+		    gBoard[rat2Y][rat2X-1] = '.';
+			rat2X = rat2X - 1;
+			score2++;
+			sproutsLeft--;
+		  }
+		  else if(gBoard[rat2Y][rat2X-1]=='.'){
+		    rat2X = rat2X - 1;
+		  }
+		  break;
+		// right
+		case 76:
+		  if(gBoard[rat2Y][rat2X+1]=='@'){
+		    gBoard[rat2Y][rat2X+1] = '.';
+			rat2X = rat2X + 1;
+			score2++;
+			sproutsLeft--;
+		  }
+		  else if(gBoard[rat2Y][rat2X+1]=='.'){
+		    rat2X = rat2X + 1;
+		  }
+		  break;		
+		// esc
+		case 27:
+		  clearTimeout(gameLoop);
+		  window.removeEventListener('keydown', whatKey, true);
+		  break;
+		default:
+          //alert("Please use 'wasd' to control RED and 'ijkl' to control BLUE.");
+		}
+		
+		// Draw score on scoreboard.
+        ctx0.clearRect(0, 0, 300, 200);
+        ctx0.font = "20px Ariel";
+        ctx0.fillText("Red Score", 20, 15);
+        ctx0.fillText(score1, 150, 15);
+		ctx0.fillText("Blue Score", 20, 65);
+		ctx0.fillText(score2, 150, 65);
+		ctx0.fillText("Sprouts Left", 20, 115);
+		ctx0.fillText(sproutsLeft, 150, 115);
+		
+	  }
+	  
+	  function finishTest(){
+	    if(sproutsLeft==0) whoWin();
+		else if(score1>score2+sproutsLeft){
+		  ctx0.clearRect(20, 165, 280, 35);
+		  ctx0.font = "20px Ariel";
+		  ctx0.fillText("Red won!", 20, 165);
+		  alert("Red won");
+		}
+		else if(score2>score1+sproutsLeft){
+		  ctx0.clearRect(20, 165, 280, 35);
+		  ctx0.font = "20px Ariel";
+		  ctx0.fillText("Blue won!", 20, 165);
+		  alert("Blue won");
+		}
+	  }
+	  
+	  function whoWin(){
+	    if(score1>score2){
+		  ctx0.font = "20px Ariel";
+		  ctx0.fillText("Game Over! Red won!", 20, 165);
+		  alert("Game Over! Red won!");
+		}
+		else if(score1<score2){
+		  ctx0.font = "20px Ariel";
+		  ctx0.fillText("Game Over! Blue won!", 20, 165);
+		  alert("Game Over! Blue won!");
+		}
+		else{
+		  ctx0.font = "20px Ariel";
+		  ctx0.fillText("Game Over! DRAW!", 20, 165);
+		  alert("Game Over! DRAW!");
+		}
+		// stop game
+		clearTimeout(gameLoop);
+		window.removeEventListener('keydown', whatKey, true);
+	  }
+	  
+	  // generate maze map
+	  
+	  function generateBoard(n){
+	    var board = new Array();
+		board.push(new Array());
+		for(var i=0; i<n+2; i++){
+		  board[0].push('#');
+		}
+		
+		for(var i=1; i<n+1; i++){
+		  board.push(new Array());
+		  for(var j=0; j<n+2; j++){
+		    if(j==0 || j==n+1){
+			  board[i].push('#');
+			}
+			else if((i+j)%2==1){
+			  board[i].push('#');
+			}
+			else{
+			  board[i].push('.');
+			}
+		  }
+		}
+		
+		board.push(new Array());
+		for(var i=0; i<n+2; i++){
+		  board[n+1].push('#');
+		}
+		return board;
+	  }
+	  
+	  function dfs(board, startRow, startCol){
+	    if(board[startRow][startCol]!='.'){
+		  return board;
+		}
+		var stack = new Array();
+		var currRow = startRow;
+		var currCol = startCol;
+		var p = [currRow, currCol];
+		stack.push(p);
+		while(stack.length != 0){
+		  var neighbor = findAllNeighbor(board, p[0], p[1]);
+		  if(neighbor.length==0 && board[p[0]][p[1]]=='.'){
+		    board[p[0]][p[1]] = '+';
+		  }
+		  else if(neighbor.length==0 && board[p[0]][p[1]]=='+'){
+		    if(stack.length!=0){
+			  p = stack.pop();
+			}
+		  }
+		  else if(board[p[0]][p[1]]=='.'){
+		    board[p[0]][p[1]] = '+';
+			stack.push(p);
+			var nextStep = neighbor[Math.floor(Math.random()*neighbor.length)];
+			board[p[0]+Math.floor(nextStep[0])/2][p[1]+Math.floor(nextStep[1])/2] = '+';
+			p = [p[0]+nextStep[0], p[1]+nextStep[1]];
+		  }
+		  else{
+		    var nextStep = neighbor[Math.floor(Math.random()*neighbor.length)];
+			board[p[0]+Math.floor(nextStep[0])/2][p[1]+Math.floor(nextStep[1])/2] = '+';
+			p = [p[0]+nextStep[0], p[1]+nextStep[1]];
+		  }
+		}
+		return board;
+	  }
+	  
+	  function findAllNeighbor(board, i, j){
+	    var up = [0,0];
+		var down = [0,0];
+		var left = [0,0];
+		var right = [0,0];
+		var list = new Array();
+	    if(i-2>0 && i-2<board.length-1 && board[i-2][j]=='.'){
+		  up[0] = -2;
+		  list.push(up);
+		}
+		if(i+2<board.length-1 && i+2>0 && board[i+2][j]=='.'){
+		  down[0] = 2;
+		  list.push(down);
+		}
+		if(j-2>0 && j-2<board[0].length-1 && board[i][j-2]=='.'){
+		  left[1] = -2;
+		  list.push(left);
+		}
+		if(j+2>0 && j+2<board[0].length-1 && board[i][j+2]=='.'){
+		  right[1] = 2;
+		  list.push(right);
+		}
+		return list;
+	  }
+	  
+	  function resetBoard(newBoard){
+	    var hall = new Array();
+	    for(var i=0; i<newBoard.length; i++){
+		  for(var j=0; j<newBoard[0].length; j++){
+		    if(newBoard[i][j]=='.'){
+			  hall.push([i,j]);
+			  if(Math.floor(Math.random()*4)==1){
+			    newBoard[i][j] = '@';
+				makeup(newBoard,i,j);
+			  }
+			}
+			else if(newBoard[i][j]=='+'){
+			  newBoard[i][j] = '.';
+			  hall.push([i,j]);
+			  if(Math.floor(Math.random()*4)==1){
+			    newBoard[i][j] = '@';
+				makeup(newBoard,i,j);
+			  }
+			}
+		  }
+		}
+		var rat1 = hall[Math.floor(Math.random()*hall.length)];
+		var rat2 = hall[Math.floor(Math.random()*hall.length)];
+		while(rat2==rat1){
+		  rat2 = hall(Math.floor(Math.random()*hall.length));
+		}
+		rat1X = rat1[1];
+		rat1Y = rat1[0];
+		rat2X = rat2[1];
+		rat2Y = rat2[0];
+		newBoard[rat1[0]][rat1[1]] = 'J';
+        newBoard[rat2[0]][rat2[1]] = 'P';
+		makeup(newBoard, rat1[0], rat1[1]);
+		makeup(newBoard, rat2[0], rat2[1]);
+		return newBoard;
+	  }
+	  
+	  function drawBoard(n){
+	    var oldBoard = generateBoard(n);
+		var newBoard = dfs(oldBoard, 1 ,5);
+		gBoard = resetBoard(newBoard);
+		var cnt1 = 0;
+		var cnt2 = 0;
+		var cnt3 = 0;
+		for(var i=0; i<gBoard.length; i++){
+		  for(var j=0; j<gBoard[0].length; j++){
+		    if(gBoard[i][j]=='#'){
+			  ctx.fillStyle = "gray";
+			  ctx.beginPath();
+			  ctx.rect(cell*j,cell*i,cell,cell);
+			  ctx.closePath();
+			  ctx.fill();
+			  cnt1++;
+			  if(cnt1==1)wallImg = ctx.getImageData(cell*j,cell*i,cell,cell);
+			}
+			else if(gBoard[i][j]=='@'){
+			  ctx.fillStyle = "#003300";
+			  ctx.beginPath();
+			  ctx.rect(cell*j,cell*i,cell,cell);
+			  ctx.closePath();
+			  ctx.fill();
+			  sproutsLeft++;
+			  cnt2++;
+			  if(cnt2==1)sproutImg = ctx.getImageData(cell*j,cell*i,cell,cell);
+			}
+			else if(gBoard[i][j]=='J'){
+			  ctx.fillStyle = "#ff0000";
+			  ctx.beginPath();
+			  ctx.rect(cell*j,cell*i,cell,cell);
+			  ctx.closePath();
+			  ctx.fill();
+			  rat1 = ctx.getImageData(cell*j,cell*i,cell,cell);
+			  // Erase it for now.
+              ctx.putImageData(oldBack, cell*j,cell*i);
+			  gBoard[i][j] = '.';
+			}
+			else if(gBoard[i][j]=='P'){
+			  ctx.fillStyle = "#0000ff";
+			  ctx.beginPath();
+			  ctx.rect(cell*j,cell*i,cell,cell);
+			  ctx.closePath();
+			  ctx.fill();
+			  rat2 = ctx.getImageData(cell*j,cell*i,cell,cell);
+			  // Erase it for now.
+              ctx.putImageData(oldBack, cell*j,cell*i);
+			  gBoard[i][j] = '.';
+			}
+			else{
+			  ctx.fillStyle = "#99ff66";
+			  ctx.beginPath();
+			  ctx.rect(cell*j,cell*i,cell,cell);
+			  ctx.closePath();
+			  ctx.fill();
+			  cnt3++;
+			  if(cnt3==1){
+			    oldBack = ctx.getImageData(cell*j,cell*i,cell,cell);
+                hallImg = ctx.getImageData(cell*j,cell*i,cell,cell);
+			  }
+			}
+		  }
+		}
+	  }
+	
+	function makeup(board, i, j){
+	  if(i-1>=0 && board[i-1][j]=='#' && i+1<board.length && board[i+1][j]=='#' && j-1>=0 && board[i][j-1]=='#' && j+1<board.length && board[i][j+1]=='#'){
+	    if(i-1>0){
+		  board[i-1][j] = '.';
+		}
+		else{
+		  board[i+1][j] = '.';
+		}
+	  }
+	}
+	
+	function myDecrease(){
+	  if(n>7) n--;
+	  cell = Math.floor(570/(n+2));
+	  sproutsLeft = 0;
+	  score1 = 0;
+	  score2 = 0;
+	  oldRat1X = 0;
+	  oldRat1Y = 0;
+	  oldRat2X = 0;
+	  oldRat2Y = 0;
+	  // Add keyboard listener.
+      window.addEventListener('keydown', whatKey, true);
+	  canvasRatRace()
+	}
+	function myIncrease(){
+	  if(n<100) n++;
+	  cell = Math.floor(570/(n+2));
+	  sproutsLeft = 0;
+	  score1 = 0;
+	  score2 = 0;
+	  oldRat1X = 0;
+	  oldRat1Y = 0;
+	  oldRat2X = 0;
+	  oldRat2Y = 0;
+	  // Add keyboard listener.
+      window.addEventListener('keydown', whatKey, true);
+	  canvasRatRace()
+	}
+	
+    </script>
+  </head>
+  
+  <body onload="canvasRatRace()">
+  <div id="header">
+    <font size="+1"><b>Canvas Rat Race</b>&nbsp&nbsp&nbsp&nbsp 
+	Click to change maze size:</font>&nbsp&nbsp
+	<button type="button" onclick="myDecrease()">Decrease</button>&nbsp&nbsp
+	<button type="button" onclick="myIncrease()">Increase</button>
+	<br>
+	<br>
+  </div>
+    <canvas id="myCanvas" width="570" height="570">
+    </canvas>
+	<canvas id="myScore" width="570" height="570" style="border:1px solid #d3d3d3;">
+	</canvas>
+	
+  </body>
+
+</html>
